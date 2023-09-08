@@ -1,4 +1,4 @@
-package httpserver
+package HTTPServer
 
 import (
 	"errors"
@@ -11,14 +11,14 @@ import (
 	"github.com/bazookajoe1/metrics-collector/internal/storage"
 )
 
-type HttpServer struct {
+type HTTPServer struct {
 	address string
 	port    string
 	router  *http.ServeMux
 	strg    storage.Storage
 }
 
-func (serv *HttpServer) Init(address string, port string, strg storage.Storage) error {
+func (serv *HTTPServer) Init(address string, port string, strg storage.Storage) error {
 	err := isValidIP(address)
 	if err != nil {
 		return err
@@ -39,11 +39,11 @@ func (serv *HttpServer) Init(address string, port string, strg storage.Storage) 
 }
 
 // Harness for router to register handlers
-func (serv *HttpServer) RegisterHandler(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+func (serv *HTTPServer) RegisterHandler(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	serv.router.HandleFunc(pattern, handler)
 }
 
-func (serv *HttpServer) Run() {
+func (serv *HTTPServer) Run() {
 	aP := fmt.Sprintf("%s:%s", serv.address, serv.port)
 	err := http.ListenAndServe(aP, serv.router)
 	if err != nil {

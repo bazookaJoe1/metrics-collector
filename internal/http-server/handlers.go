@@ -1,4 +1,4 @@
-package httpserver
+package HTTPServer
 
 import (
 	"net/http"
@@ -12,7 +12,7 @@ type parsedPath struct {
 	metricValue string
 }
 
-func (serv *HttpServer) MetricHandler(res http.ResponseWriter, req *http.Request) {
+func (serv *HTTPServer) MetricHandler(res http.ResponseWriter, req *http.Request) {
 	var err error
 
 	if req.Method != http.MethodPost {

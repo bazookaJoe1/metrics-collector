@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	httpserver "github.com/bazookajoe1/metrics-collector/internal/http-server"
+	HTTPServer "github.com/bazookajoe1/metrics-collector/internal/http-server"
 	"github.com/bazookajoe1/metrics-collector/internal/memstorage"
 )
 
@@ -13,7 +13,7 @@ func main() {
 	servStorage.Init()
 
 	// TODO: init http server
-	server := &httpserver.HttpServer{}
+	server := &HTTPServer.HTTPServer{}
 	err := server.Init("localhost", "8080", servStorage)
 	if err != nil {
 		os.Exit(-1)
