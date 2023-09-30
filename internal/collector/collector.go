@@ -26,6 +26,7 @@ type Collector struct {
 
 func (c *Collector) Init(logger *log.Logger) {
 	c.Logger = logger
+	//	c.stats = make(map[string][2]string)
 	c.stats = map[string][2]string{
 		"Alloc":         {"gauge", "0"},
 		"BuckHashSys":   {"gauge", "0"},
