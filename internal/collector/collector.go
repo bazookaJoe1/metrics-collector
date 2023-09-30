@@ -127,7 +127,7 @@ func (c *Collector) counterUpdate(name string) error {
 			c.stats[name] = [2]string{"counter", strconv.FormatInt(counter, 10)}
 			return nil
 		}
-		return fmt.Errorf("Key %s is not counter", name)
+		return fmt.Errorf("key %s is not type of counter", name)
 	}
-	return fmt.Errorf("Key %s doesn't exist", name)
+	return fmt.Errorf("key %s doesn't exist", name)
 }
