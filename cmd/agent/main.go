@@ -13,14 +13,14 @@ import (
 func main() {
 	logger := log.New(os.Stdout, "", log.Flags())
 
-	collector_inst := &collector.Collector{}
-	collector_inst.Init(logger)
+	collectorInst := &collector.Collector{}
+	collectorInst.Init(logger)
 
 	agent := &httpagent.HTTPAgent{
 		Client:          &http.Client{Timeout: 5 * time.Second},
 		Address:         "localhost",
 		Port:            "8080",
-		Collector:       collector_inst,
+		Collector:       collectorInst,
 		PollInterval:    2,
 		ReportIntervall: 10,
 		Logger:          logger,
