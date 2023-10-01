@@ -84,8 +84,8 @@ func (s *InMemoryStorage) UpdateMetric(mType string, mName string, mValue string
 		// enter critical section
 		s.mu.Lock()
 		tempCVal, err := strconv.ParseInt(s.counter[mName], 10, 64)
-		if err != nil { // такое вряд ли случится, но мало ли
-			return err
+		if err != nil {
+			tempCVal = 0 // если такого ключа еще нет, то вернет ошибку, т.к. строка пустая
 		}
 		tempCVal += counterIncrement
 		s.counter[mName] = strconv.FormatInt(tempCVal, 10)
