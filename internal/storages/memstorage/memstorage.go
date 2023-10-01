@@ -86,7 +86,7 @@ func (s *InMemoryStorage) UpdateMetric(mType string, mName string, mValue string
 		s.counter[mName] += int64Value
 		s.mu.Unlock()
 	default:
-		return fmt.Errorf("Non-existent metric type")
+		return fmt.Errorf("non-existent metric type")
 	}
 	return nil
 }
