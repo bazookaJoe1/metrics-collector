@@ -1,10 +1,16 @@
 package memstorage
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 )
+
+type Metric struct {
+	Type  string
+	Name  string
+	Value string
+}
 
 type InMemoryStorage struct {
 	gauge   map[string]float64
@@ -17,45 +23,71 @@ func (s *InMemoryStorage) Init() {
 	s.counter = make(map[string]int64)
 }
 
-func (s *InMemoryStorage) UpdateGauge(name string, value string) error {
-
-	if !checkMetricName(name) {
-		return errors.New("invalid gauge metric name")
+func (s *InMemoryStorage) ReadMetric(mType string, mName string) (string, error) {
+	if !checkMetricName(mName) {
+		return "", fmt.Errorf("invalid metric name %s", mName)
 	}
 
-	float64Value, err := checkGaugeValue(value)
-	if err != nil {
-		return err
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	switch mType {
+	case "gauge":
+		if val, ok := s.gauge[mName]; ok {
+			return strconv.FormatFloat(val, 'f', 6, 64), nil
+		}
+	case "counter":
+		if val, ok := s.counter[mName]; ok {
+			return strconv.FormatInt(val, 10), nil
+		}
 	}
 
-	// enter critical section
-	s.mu.Lock()
-	s.gauge[name] = float64Value
-	s.mu.Unlock()
+	return "", fmt.Errorf("invalid metric type %s", mType)
 
-	return nil
 }
 
-func (s *InMemoryStorage) UpdateCounter(name string, value string) error {
+func (s *InMemoryStorage) ReadAllMetrics() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
-	if !checkMetricName(name) {
-		return errors.New("invalid counter metric name")
+	out := ""
+	for key, val := range s.gauge {
+		out += fmt.Sprintf("%s: %s\n", key, strconv.FormatFloat(val, 'f', 6, 64))
+	}
+	for key, val := range s.counter {
+		out += fmt.Sprintf("%s: %s\n", key, strconv.FormatInt(val, 10))
 	}
 
-	int64Value, err := checkCounterValue(value)
-	if err != nil {
-		return err
+	return out
+}
+
+func (s *InMemoryStorage) UpdateMetric(mType string, mName string, mValue string) error {
+	if !checkMetricName(mName) {
+		return fmt.Errorf("invalid metric name %s", mName)
 	}
 
-	// enter critical section
-	s.mu.Lock()
-	if val, exist := s.counter[name]; exist {
-		s.counter[name] = val + int64Value
-	} else {
-		s.counter[name] = int64Value
-	}
-	s.mu.Unlock()
+	switch mType {
+	case "gauge":
+		float64Value, err := checkGaugeValue(mValue)
+		if err != nil {
+			return err
+		}
+		// enter critical section
+		s.mu.Lock()
+		s.gauge[mName] = float64Value
+		s.mu.Unlock()
 
+	case "counter":
+		int64Value, err := checkCounterValue(mValue)
+		if err != nil {
+			return err
+		}
+		// enter critical section
+		s.mu.Lock()
+		s.counter[mName] += int64Value
+		s.mu.Unlock()
+	default:
+		return fmt.Errorf("Non-existent metric type")
+	}
 	return nil
 }
 

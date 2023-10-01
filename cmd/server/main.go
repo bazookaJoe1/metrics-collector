@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	httpserver "github.com/bazookajoe1/metrics-collector/internal/http-server"
@@ -17,16 +16,10 @@ func main() {
 	servStorage.Init()
 
 	// TODO: init http server
-	server := &httpserver.HTTPServer{
-		Address: "localhost",
-		Port:    "8080",
-		Router:  http.NewServeMux(),
-		Strg:    servStorage,
-		Logger:  logger,
-	}
+	server := httpserver.ServerNew("localhost", "8080", servStorage, logger)
 
 	// TODO: register handlers
-	server.Router.HandleFunc("/update/", server.MetricHandler)
+	server.InitRoutes()
 
 	// TODO: run server
 	server.Run()
