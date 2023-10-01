@@ -81,7 +81,7 @@ func (c *Collector) CollectMetrics() error {
 	for { // we don't need zero random value
 		randomValue := rand.NormFloat64()
 		if randomValue != 0 {
-			c.stats["RandomValue"] = [2]string{"gauge", strconv.FormatFloat(float64(randomValue), 'f', 6, 64)}
+			c.stats["RandomValue"] = [2]string{"gauge", strconv.FormatFloat(float64(randomValue), 'f', 3, 64)}
 			break
 		}
 	}
