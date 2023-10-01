@@ -77,13 +77,18 @@ func (s *InMemoryStorage) UpdateMetric(mType string, mName string, mValue string
 		s.mu.Unlock()
 
 	case "counter":
-		err := checkCounterValue(mValue)
+		counterIncrement, err := checkCounterValue(mValue)
 		if err != nil {
 			return err
 		}
 		// enter critical section
 		s.mu.Lock()
-		s.counter[mName] += mValue
+		tempCVal, err := strconv.ParseInt(s.counter[mName], 10, 64)
+		if err != nil { // такое вряд ли случится, но мало ли
+			return err
+		}
+		tempCVal += counterIncrement
+		s.counter[mName] = strconv.FormatInt(tempCVal, 10)
 		s.mu.Unlock()
 	default:
 		return fmt.Errorf("non-existent metric type")
@@ -107,11 +112,11 @@ func checkGaugeValue(value string) error {
 }
 
 // Checks counter metric value is correct to convert into int64
-func checkCounterValue(value string) error {
-	_, err := strconv.ParseInt(value, 10, 64)
+func checkCounterValue(value string) (int64, error) {
+	counterVal, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return counterVal, nil
 }
