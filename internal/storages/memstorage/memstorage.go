@@ -8,18 +8,21 @@ import (
 	"github.com/bazookajoe1/metrics-collector/internal/metric"
 )
 
-type InMemoryStorage struct {
+type inMemoryStorage struct {
 	gauge   map[string]string
 	counter map[string]string
 	mu      sync.RWMutex
 }
 
-func (s *InMemoryStorage) Init() {
+func NewInMemoryStorage() *inMemoryStorage {
+	s := &inMemoryStorage{}
 	s.gauge = make(map[string]string)
 	s.counter = make(map[string]string)
+
+	return s
 }
 
-func (s *InMemoryStorage) ReadMetric(mType string, mName string) (string, error) {
+func (s *inMemoryStorage) ReadMetric(mType string, mName string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	switch mType {
@@ -36,7 +39,7 @@ func (s *InMemoryStorage) ReadMetric(mType string, mName string) (string, error)
 	return "", fmt.Errorf("invalid metric type %s", mType)
 }
 
-func (s *InMemoryStorage) ReadAllMetrics() string {
+func (s *inMemoryStorage) ReadAllMetrics() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -51,7 +54,7 @@ func (s *InMemoryStorage) ReadAllMetrics() string {
 	return out
 }
 
-func (s *InMemoryStorage) UpdateMetric(m *metric.Metric) {
+func (s *inMemoryStorage) UpdateMetric(m *metric.Metric) {
 	// мы заранее понимаем, что все параметры правильные, поэтому ничего проверять не будем
 	mName, mType, mValue := m.GetParams()
 	switch mType {

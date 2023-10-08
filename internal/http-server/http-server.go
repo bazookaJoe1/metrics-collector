@@ -11,7 +11,6 @@ import (
 )
 
 type Storage interface {
-	Init()
 	UpdateMetric(*metric.Metric)
 	ReadMetric(mType string, mName string) (string, error)
 	ReadAllMetrics() string

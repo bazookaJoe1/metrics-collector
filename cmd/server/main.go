@@ -12,8 +12,7 @@ func main() {
 	// TODO: create logger
 	logger := log.New(os.Stdout, "", log.Flags())
 	// TODO: init storage
-	servStorage := &memstorage.InMemoryStorage{}
-	servStorage.Init()
+	servStorage := memstorage.NewInMemoryStorage()
 
 	// TODO: init http server
 	server := httpserver.ServerNew("localhost", "8080", servStorage, logger)

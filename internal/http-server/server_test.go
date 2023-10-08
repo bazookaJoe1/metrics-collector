@@ -29,8 +29,7 @@ func testRequest(t *testing.T, ts *httptest.Server, path string, method string) 
 
 func TestRouter(t *testing.T) {
 	logger := log.New(os.Stdout, "", log.Flags())
-	servStorage := &memstorage.InMemoryStorage{}
-	servStorage.Init()
+	servStorage := memstorage.NewInMemoryStorage()
 	serv := ServerNew("localhost", "8080", servStorage, logger)
 	serv.InitRoutes()
 
