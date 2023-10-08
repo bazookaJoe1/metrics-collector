@@ -28,10 +28,10 @@ func NewMetric(mName, mType, mValue string) (*Metric, error) {
 				return &Metric{}, err
 			}
 		default:
-			return &Metric{}, fmt.Errorf("Error metric type: %v", mType)
+			return &Metric{}, fmt.Errorf("error metric type: %v", mType)
 		}
 	} else {
-		return &Metric{}, fmt.Errorf("Error metric name: %v", mName)
+		return &Metric{}, fmt.Errorf("error metric name: %v", mName)
 	}
 
 	return &Metric{mType: mType, mName: mName, mValue: mValue}, nil
