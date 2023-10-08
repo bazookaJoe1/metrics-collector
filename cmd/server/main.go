@@ -1,26 +1,24 @@
 package main
 
 import (
+	"log"
 	"os"
 
-	HTTPServer "github.com/bazookajoe1/metrics-collector/internal/http-server"
-	"github.com/bazookajoe1/metrics-collector/internal/memstorage"
+	httpserver "github.com/bazookajoe1/metrics-collector/internal/http-server"
+	"github.com/bazookajoe1/metrics-collector/internal/storages/memstorage"
 )
 
 func main() {
+	// TODO: create logger
+	logger := log.New(os.Stdout, "", log.Flags())
 	// TODO: init storage
-	servStorage := &memstorage.InMemoryStorage{}
-	servStorage.Init()
+	servStorage := memstorage.NewInMemoryStorage()
 
 	// TODO: init http server
-	server := &HTTPServer.HTTPServer{}
-	err := server.Init("localhost", "8080", servStorage)
-	if err != nil {
-		os.Exit(-1)
-	}
+	server := httpserver.ServerNew("localhost", "8080", servStorage, logger)
 
 	// TODO: register handlers
-	server.RegisterHandler("/update/", server.MetricHandler)
+	server.InitRoutes()
 
 	// TODO: run server
 	server.Run()

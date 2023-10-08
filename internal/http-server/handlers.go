@@ -2,86 +2,54 @@ package httpserver
 
 import (
 	"net/http"
-	"strings"
+
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
+	"github.com/go-chi/chi/v5"
 )
 
-type parsedPath struct {
-	hand        string
-	metricType  string
-	metricName  string
-	metricValue string
+func (serv *_HTTPServer) MetricSave(res http.ResponseWriter, req *http.Request) {
+
+	serv.Logger.Println("Request", req.URL.Path)
+
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+	metric, err := metric.NewMetric(chi.URLParam(req, "name"),
+		chi.URLParam(req, "type"),
+		chi.URLParam(req, "value"))
+
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+	}
+
+	serv.Strg.UpdateMetric(metric)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+	}
+
+	res.Write([]byte{})
 }
 
-func (serv *HTTPServer) MetricHandler(res http.ResponseWriter, req *http.Request) {
+func (serv *_HTTPServer) MetricRead(res http.ResponseWriter, req *http.Request) {
 	var err error
+	serv.Logger.Println("Request", req.URL.Path)
 
-	if req.Method != http.MethodPost {
-		http.Error(res, "405 Method not allowed", http.StatusMethodNotAllowed)
-		return
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+	value, err := serv.Strg.ReadMetric(chi.URLParam(req, "type"), chi.URLParam(req, "name"))
+	if err != nil {
+		res.WriteHeader(http.StatusNotFound)
 	}
 
-	pP := parsePath(req)
-	/*if pP.metricType != "gauge" && pP.metricType != "counter" {
-		http.Error(res, "", http.StatusBadRequest)
-		return
-	}*/
+	res.Write([]byte(value))
 
-	if pP.metricValue == "" {
-		http.Error(res, "404 Not Found", http.StatusNotFound)
-		return
-	}
-
-	switch pP.metricType {
-	case "gauge":
-		err = serv.strg.UpdateGauge(pP.metricName, pP.metricValue)
-		if err != nil {
-			http.Error(res, "400 Bad Request", http.StatusBadRequest)
-			return
-		}
-
-		res.Write([]byte{})
-		return
-	case "counter":
-		err = serv.strg.UpdateCounter(pP.metricName, pP.metricValue)
-		if err != nil {
-			http.Error(res, "400 Bad Request", http.StatusBadRequest)
-			return
-		}
-
-		res.Write([]byte{})
-		return
-	default:
-		http.Error(res, "", http.StatusBadRequest)
-	}
 	_ = err
 }
 
-func parsePath(req *http.Request) parsedPath {
-	path := req.URL.Path
-	separatedPath := strings.Split(path, "/")
-	separatedPath = separatedPath[1:]
+func (serv *_HTTPServer) MetricAll(res http.ResponseWriter, req *http.Request) {
+	serv.Logger.Println("Request", req.URL.Path)
 
-	pP := parsedPath{
-		hand: separatedPath[0],
-	}
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
-	switch len(separatedPath) {
-	case 1:
-		break
-	case 2:
-		pP.metricType = separatedPath[1]
-	case 3:
-		pP.metricType = separatedPath[1]
-		pP.metricName = separatedPath[2]
-	case 4:
-		pP.metricType = separatedPath[1]
-		pP.metricName = separatedPath[2]
-		pP.metricValue = separatedPath[3]
-	default:
-		pP.metricType = separatedPath[1]
-		pP.metricName = separatedPath[2]
-		pP.metricValue = separatedPath[3]
-	}
-
-	return pP
+	metrics := serv.Strg.ReadAllMetrics()
+	res.Write([]byte(metrics))
 }
