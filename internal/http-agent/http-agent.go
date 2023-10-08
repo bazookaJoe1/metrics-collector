@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bazookajoe1/metrics-collector/internal/collector"
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -22,7 +22,7 @@ type _HTTPAgent struct {
 
 type MetricCollector interface {
 	CollectMetrics() error
-	GetMetrics() []collector.Metric
+	GetMetrics() []*metric.Metric
 	Run(time.Duration)
 }
 
@@ -56,9 +56,10 @@ func (agent *_HTTPAgent) Run() {
 	wg.Wait()
 }
 
-func (agent *_HTTPAgent) sendMetrics(metrics []collector.Metric) {
+func (agent *_HTTPAgent) sendMetrics(metrics []*metric.Metric) {
 	for _, metric := range metrics {
-		endpoint := fmt.Sprintf("%s/%s/%s", metric.MType, metric.MName, metric.MValue)
+		mName, mType, mValue := metric.GetParams()
+		endpoint := fmt.Sprintf("%s/%s/%s", mType, mName, mValue)
 		url := fmt.Sprintf("http://%s:%s/update/%s", agent.Address, agent.Port, endpoint)
 
 		response, err := agent.Client.R().SetHeader("Content-Type", "text/plain").Post(url)

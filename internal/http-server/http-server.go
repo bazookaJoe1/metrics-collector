@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
 	"github.com/go-chi/chi/v5"
 )
 
 type Storage interface {
 	Init()
-	UpdateMetric(mType string, mName string, mValue string) error
+	UpdateMetric(*metric.Metric)
 	ReadMetric(mType string, mName string) (string, error)
 	ReadAllMetrics() string
 }

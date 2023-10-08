@@ -4,11 +4,45 @@ import (
 	"log"
 	"strconv"
 	"testing"
+
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
 )
 
+// What metrics we need to collect (name, type)
+var allowedMetrics = [][2]string{
+	{"Alloc", metric.Gauge},
+	{"BuckHashSys", metric.Gauge},
+	{"Frees", metric.Gauge},
+	{"GCCPUFraction", metric.Gauge},
+	{"GCSys", metric.Gauge},
+	{"HeapAlloc", metric.Gauge},
+	{"HeapIdle", metric.Gauge},
+	{"HeapInuse", metric.Gauge},
+	{"HeapObjects", metric.Gauge},
+	{"HeapReleased", metric.Gauge},
+	{"HeapSys", metric.Gauge},
+	{"LastGC", metric.Gauge},
+	{"Lookups", metric.Gauge},
+	{"MCacheInuse", metric.Gauge},
+	{"MCacheSys", metric.Gauge},
+	{"MSpanInuse", metric.Gauge},
+	{"MSpanSys", metric.Gauge},
+	{"Mallocs", metric.Gauge},
+	{"NextGC", metric.Gauge},
+	{"NumForcedGC", metric.Gauge},
+	{"NumGC", metric.Gauge},
+	{"OtherSys", metric.Gauge},
+	{"PauseTotalNs", metric.Gauge},
+	{"StackInuse", metric.Gauge},
+	{"StackSys", metric.Gauge},
+	{"Sys", metric.Gauge},
+	{"TotalAlloc", metric.Gauge},
+	{"RandomValue", metric.Gauge},
+	{"Pollcount", metric.Counter},
+}
+
 func TestCollector_CollectMetrics(t *testing.T) {
-	c := &Collector{}
-	c.Init(log.New(nil, "", 0))
+	c := NewCollector(log.New(nil, "", 0), allowedMetrics)
 
 	for counter := 1; counter < 10000; counter++ {
 		err := c.CollectMetrics()
@@ -16,13 +50,13 @@ func TestCollector_CollectMetrics(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Collect metrics returned an error: %v", err)
 		}
-
-		if c.stats["RandomValue"][1] == "0" {
+		_, _, value := c.stats["RandomValue"].GetParams()
+		if value == "0" {
 			t.Errorf("RandomValue was not updated")
 		}
-
-		if c.stats["Pollcount"][1] != strconv.FormatInt(int64(counter), 10) {
-			t.Fatalf("Pollcount is invalid, want: %s, got: %s", c.stats["Pollcount"][1], strconv.FormatInt(int64(counter), 10))
+		_, _, value = c.stats["Pollcount"].GetParams()
+		if value != strconv.FormatInt(int64(counter), 10) {
+			t.Fatalf("Pollcount is invalid, want: %s, got: %s", value, strconv.FormatInt(int64(counter), 10))
 		}
 		c.mux.RUnlock()
 	}

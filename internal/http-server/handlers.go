@@ -3,14 +3,9 @@ package httpserver
 import (
 	"net/http"
 
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
 	"github.com/go-chi/chi/v5"
 )
-
-type Metric struct {
-	Type  string
-	Name  string
-	Value string
-}
 
 func (serv *_HTTPServer) MetricSave(res http.ResponseWriter, req *http.Request) {
 
@@ -18,13 +13,15 @@ func (serv *_HTTPServer) MetricSave(res http.ResponseWriter, req *http.Request) 
 
 	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
-	metric := Metric{
-		Type:  chi.URLParam(req, "type"),
-		Name:  chi.URLParam(req, "name"),
-		Value: chi.URLParam(req, "value"),
+	metric, err := metric.NewMetric(chi.URLParam(req, "name"),
+		chi.URLParam(req, "type"),
+		chi.URLParam(req, "value"))
+
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
 	}
 
-	err := serv.Strg.UpdateMetric(metric.Type, metric.Name, metric.Value)
+	serv.Strg.UpdateMetric(metric)
 	if err != nil {
 		res.WriteHeader(http.StatusBadRequest)
 	}
@@ -38,18 +35,12 @@ func (serv *_HTTPServer) MetricRead(res http.ResponseWriter, req *http.Request) 
 
 	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
-	metric := Metric{
-		Type:  chi.URLParam(req, "type"),
-		Name:  chi.URLParam(req, "name"),
-		Value: "",
-	}
-
-	metric.Value, err = serv.Strg.ReadMetric(metric.Type, metric.Name)
+	value, err := serv.Strg.ReadMetric(chi.URLParam(req, "type"), chi.URLParam(req, "name"))
 	if err != nil {
 		res.WriteHeader(http.StatusNotFound)
 	}
 
-	res.Write([]byte(metric.Value))
+	res.Write([]byte(value))
 
 	_ = err
 }

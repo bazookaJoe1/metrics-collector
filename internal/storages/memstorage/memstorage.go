@@ -4,13 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-)
 
-type Metric struct {
-	Type  string
-	Name  string
-	Value string
-}
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
+)
 
 type InMemoryStorage struct {
 	gauge   map[string]string
@@ -24,25 +20,20 @@ func (s *InMemoryStorage) Init() {
 }
 
 func (s *InMemoryStorage) ReadMetric(mType string, mName string) (string, error) {
-	if !checkMetricName(mName) {
-		return "", fmt.Errorf("invalid metric name %s", mName)
-	}
-
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	switch mType {
-	case "gauge":
+	case metric.Gauge:
 		if val, ok := s.gauge[mName]; ok {
 			return val, nil
 		}
-	case "counter":
+	case metric.Counter:
 		if val, ok := s.counter[mName]; ok {
 			return val, nil
 		}
 	}
 
 	return "", fmt.Errorf("invalid metric type %s", mType)
-
 }
 
 func (s *InMemoryStorage) ReadAllMetrics() string {
@@ -60,63 +51,31 @@ func (s *InMemoryStorage) ReadAllMetrics() string {
 	return out
 }
 
-func (s *InMemoryStorage) UpdateMetric(mType string, mName string, mValue string) error {
-	if !checkMetricName(mName) {
-		return fmt.Errorf("invalid metric name %s", mName)
-	}
-
+func (s *InMemoryStorage) UpdateMetric(m *metric.Metric) {
+	// мы заранее понимаем, что все параметры правильные, поэтому ничего проверять не будем
+	mName, mType, mValue := m.GetParams()
 	switch mType {
-	case "gauge":
-		err := checkGaugeValue(mValue)
-		if err != nil {
-			return err
-		}
+	case metric.Gauge:
 		// enter critical section
 		s.mu.Lock()
 		s.gauge[mName] = mValue
 		s.mu.Unlock()
 
-	case "counter":
-		counterIncrement, err := checkCounterValue(mValue)
-		if err != nil {
-			return err
-		}
+	case metric.Counter:
 		// enter critical section
 		s.mu.Lock()
 		tempCVal, err := strconv.ParseInt(s.counter[mName], 10, 64)
 		if err != nil {
 			tempCVal = 0 // если такого ключа еще нет, то вернет ошибку, т.к. строка пустая
 		}
+
+		counterIncrement, err := strconv.ParseInt(mValue, 10, 64)
+		if err != nil {
+			break
+		}
+
 		tempCVal += counterIncrement
 		s.counter[mName] = strconv.FormatInt(tempCVal, 10)
 		s.mu.Unlock()
-	default:
-		return fmt.Errorf("non-existent metric type")
 	}
-	return nil
-}
-
-// Checks metric name is not empty
-func checkMetricName(name string) bool {
-	return name != ""
-}
-
-// Checks gauge metric value is correct to convert into float64
-func checkGaugeValue(value string) error {
-	_, err := strconv.ParseFloat(value, 64)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Checks counter metric value is correct to convert into int64
-func checkCounterValue(value string) (int64, error) {
-	counterVal, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return counterVal, nil
 }
