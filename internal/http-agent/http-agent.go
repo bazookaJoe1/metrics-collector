@@ -2,11 +2,12 @@ package httpagent
 
 import (
 	"fmt"
-	agentconfig "github.com/bazookajoe1/metrics-collector/internal/agent-config"
-	"github.com/bazookajoe1/metrics-collector/internal/collector"
 	"log"
 	"sync"
 	"time"
+
+	agentconfig "github.com/bazookajoe1/metrics-collector/internal/agentconfig"
+	"github.com/bazookajoe1/metrics-collector/internal/collector"
 
 	"github.com/bazookajoe1/metrics-collector/internal/metric"
 	"github.com/go-resty/resty/v2"

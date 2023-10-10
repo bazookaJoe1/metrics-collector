@@ -1,11 +1,12 @@
-package agent_arg_parser
+package agentargparser
 
 import (
 	"flag"
 	"fmt"
-	npv "github.com/bazookajoe1/metrics-collector/internal/net-params-validator"
 	"strings"
 	"time"
+
+	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 )
 
 type CLArgsParams struct {

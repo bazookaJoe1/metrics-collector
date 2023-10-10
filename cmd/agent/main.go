@@ -1,9 +1,10 @@
 package main
 
 import (
-	agent_config "github.com/bazookajoe1/metrics-collector/internal/agent-config"
 	"log"
 	"os"
+
+	agent_config "github.com/bazookajoe1/metrics-collector/internal/agentconfig"
 
 	"github.com/bazookajoe1/metrics-collector/internal/collector"
 	httpagent "github.com/bazookajoe1/metrics-collector/internal/http-agent"

@@ -1,7 +1,7 @@
-package server_env_parser
+package serverenvparser
 
 import (
-	npv "github.com/bazookajoe1/metrics-collector/internal/net-params-validator"
+	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 	"github.com/caarlos0/env/v9"
 )
 

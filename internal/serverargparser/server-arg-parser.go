@@ -1,10 +1,11 @@
-package server_arg_parser
+package serverargparser
 
 import (
 	"flag"
 	"fmt"
-	npv "github.com/bazookajoe1/metrics-collector/internal/net-params-validator"
 	"strings"
+
+	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 )
 
 type CLArgParams struct {

@@ -1,13 +1,14 @@
-package server_config
+package serverconfig
 
 import (
 	"fmt"
-	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
-	npv "github.com/bazookajoe1/metrics-collector/internal/net-params-validator"
-	sap "github.com/bazookajoe1/metrics-collector/internal/server-arg-parser"
-	sep "github.com/bazookajoe1/metrics-collector/internal/server-env-parser"
-	"github.com/bazookajoe1/metrics-collector/internal/storage"
 	"sync"
+
+	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
+	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
+	sap "github.com/bazookajoe1/metrics-collector/internal/serverargparser"
+	sep "github.com/bazookajoe1/metrics-collector/internal/serverenvparser"
+	"github.com/bazookajoe1/metrics-collector/internal/storage"
 )
 
 const emptyString = ""

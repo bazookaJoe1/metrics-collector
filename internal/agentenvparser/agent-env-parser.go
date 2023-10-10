@@ -1,9 +1,10 @@
-package agent_env_parser
+package agentenvparser
 
 import (
-	npv "github.com/bazookajoe1/metrics-collector/internal/net-params-validator"
-	"github.com/caarlos0/env/v9"
 	"time"
+
+	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
+	"github.com/caarlos0/env/v9"
 )
 
 const invalidDuration time.Duration = 123456789

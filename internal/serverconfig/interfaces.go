@@ -1,4 +1,4 @@
-package server_config
+package serverconfig
 
 import (
 	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"

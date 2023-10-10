@@ -1,9 +1,10 @@
-package agent_config
+package agentconfig
 
 import (
-	"github.com/bazookajoe1/metrics-collector/internal/collector"
 	"log"
 	"time"
+
+	"github.com/bazookajoe1/metrics-collector/internal/collector"
 )
 
 type IConfig interface {

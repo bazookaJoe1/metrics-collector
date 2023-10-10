@@ -1,4 +1,4 @@
-package net_params_validator
+package netparamsvalidator
 
 import (
 	"fmt"

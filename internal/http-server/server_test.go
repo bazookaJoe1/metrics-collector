@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
-	serverconfig "github.com/bazookajoe1/metrics-collector/internal/server-config"
+	serverconfig "github.com/bazookajoe1/metrics-collector/internal/serverconfig"
 	"github.com/bazookajoe1/metrics-collector/internal/storage/memstorage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

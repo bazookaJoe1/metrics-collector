@@ -1,13 +1,14 @@
-package agent_config
+package agentconfig
 
 import (
 	"fmt"
-	aap "github.com/bazookajoe1/metrics-collector/internal/agent-arg-parser"
-	aep "github.com/bazookajoe1/metrics-collector/internal/agent-env-parser"
-	"github.com/bazookajoe1/metrics-collector/internal/collector"
-	npv "github.com/bazookajoe1/metrics-collector/internal/net-params-validator"
 	"log"
 	"time"
+
+	aap "github.com/bazookajoe1/metrics-collector/internal/agentargparser"
+	aep "github.com/bazookajoe1/metrics-collector/internal/agentenvparser"
+	"github.com/bazookajoe1/metrics-collector/internal/collector"
+	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 )
 
 const emptyString = ""

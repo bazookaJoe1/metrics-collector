@@ -3,7 +3,7 @@ package main
 import (
 	httpserver "github.com/bazookajoe1/metrics-collector/internal/http-server"
 	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
-	serverconfig "github.com/bazookajoe1/metrics-collector/internal/server-config"
+	serverconfig "github.com/bazookajoe1/metrics-collector/internal/serverconfig"
 	"github.com/bazookajoe1/metrics-collector/internal/storage/memstorage"
 )
 

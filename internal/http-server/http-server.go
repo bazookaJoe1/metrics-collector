@@ -2,11 +2,12 @@ package httpserver
 
 import (
 	"fmt"
-	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
-	serverconfig "github.com/bazookajoe1/metrics-collector/internal/server-config"
-	"github.com/bazookajoe1/metrics-collector/internal/storage"
 	"net/http"
 	"os"
+
+	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
+	"github.com/bazookajoe1/metrics-collector/internal/serverconfig"
+	"github.com/bazookajoe1/metrics-collector/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
