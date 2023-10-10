@@ -3,17 +3,15 @@ package agentargparser
 import (
 	"flag"
 	"fmt"
-	"strings"
-	"time"
-
 	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
+	"strings"
 )
 
 type CLArgsParams struct {
 	Host           string
 	Port           string
-	PollInterval   time.Duration
-	ReportInterval time.Duration
+	PollInterval   int
+	ReportInterval int
 }
 
 func (a *CLArgsParams) String() string {
@@ -49,11 +47,11 @@ func (a *CLArgsParams) GetPort() string {
 	return a.Port
 }
 
-func (a *CLArgsParams) GetPI() time.Duration {
+func (a *CLArgsParams) GetPI() int {
 	return a.PollInterval
 }
 
-func (a *CLArgsParams) GetRI() time.Duration {
+func (a *CLArgsParams) GetRI() int {
 	return a.ReportInterval
 }
 
@@ -61,13 +59,13 @@ func ArgParse() *CLArgsParams {
 	params := &CLArgsParams{
 		Host:           "localhost",
 		Port:           "8080",
-		ReportInterval: 10 * time.Second,
-		PollInterval:   2 * time.Second,
+		ReportInterval: 10,
+		PollInterval:   2,
 	}
 
 	flag.Var(params, "a", "Server listen point in format: `Host:Port`")
-	flag.DurationVar(&params.ReportInterval, "r", 10*time.Second, "Report interval in seconds")
-	flag.DurationVar(&params.PollInterval, "p", 2*time.Second, "Collect interval in seconds")
+	flag.IntVar(&params.ReportInterval, "r", 10, "Report interval in seconds")
+	flag.IntVar(&params.PollInterval, "p", 2, "Collect interval in seconds")
 	flag.Parse()
 
 	return params

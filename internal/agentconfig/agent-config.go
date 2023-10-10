@@ -12,13 +12,13 @@ import (
 )
 
 const emptyString = ""
-const invalidDuration time.Duration = 123456789
+const invalidDuration = time.Duration(123456789) * time.Second
 
 type IParams interface {
 	GetAddr() string
 	GetPort() string
-	GetPI() time.Duration
-	GetRI() time.Duration
+	GetPI() int
+	GetRI() int
 }
 
 type Config struct {
@@ -53,12 +53,12 @@ func NewConfig(collector collector.MetricCollector, logger *log.Logger) *Config 
 
 func (c *Config) UpdateConfig(p ...IParams) error {
 	for _, paramInstance := range p {
-		pollInterval := paramInstance.GetPI()
+		pollInterval := time.Duration(paramInstance.GetPI()) * time.Second
 		if pollInterval != invalidDuration {
 			c.pollInterval = pollInterval
 		}
 
-		reportInterval := paramInstance.GetRI()
+		reportInterval := time.Duration(paramInstance.GetRI()) * time.Second
 		if reportInterval != invalidDuration {
 			c.reportInterval = reportInterval
 		}
