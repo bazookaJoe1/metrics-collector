@@ -2,13 +2,13 @@ package httpserver
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
-	"github.com/bazookajoe1/metrics-collector/internal/storages/memstorage"
+	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
+	serverconfig "github.com/bazookajoe1/metrics-collector/internal/server-config"
+	"github.com/bazookajoe1/metrics-collector/internal/storage/memstorage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,9 +28,11 @@ func testRequest(t *testing.T, ts *httptest.Server, path string, method string) 
 }
 
 func TestRouter(t *testing.T) {
-	logger := log.New(os.Stdout, "", log.Flags())
+	logger := zlogger.NewZapLogger()
 	servStorage := memstorage.NewInMemoryStorage()
-	serv := ServerNew("localhost", "8080", servStorage, logger)
+	config := serverconfig.NewConfig(servStorage, logger)
+	// TODO: init http server
+	serv := ServerNew(config)
 	serv.InitRoutes()
 
 	ts := httptest.NewServer(serv.Router)

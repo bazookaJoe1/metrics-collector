@@ -2,6 +2,8 @@ package httpagent
 
 import (
 	"fmt"
+	agentconfig "github.com/bazookajoe1/metrics-collector/internal/agent-config"
+	"github.com/bazookajoe1/metrics-collector/internal/collector"
 	"log"
 	"sync"
 	"time"
@@ -11,30 +13,31 @@ import (
 )
 
 type _HTTPAgent struct {
-	Client          *resty.Client
-	Address         string
-	Port            string
-	Collector       MetricCollector
-	PollInterval    time.Duration
-	ReportIntervall time.Duration
-	Logger          *log.Logger
+	Client         *resty.Client
+	Address        string
+	Port           string
+	Collector      collector.MetricCollector
+	PollInterval   time.Duration
+	ReportInterval time.Duration
+	Logger         *log.Logger
 }
 
-type MetricCollector interface {
-	CollectMetrics() error
-	GetMetrics() []*metric.Metric
-	Run(time.Duration)
-}
+func AgentNew(c agentconfig.IConfig) *_HTTPAgent {
+	address := c.GetAddress()
+	port := c.GetPort()
+	collector := c.GetCollector()
+	pollInterval := c.GetPI()
+	reportInterval := c.GetRI()
+	logger := c.GetLogger()
 
-func AgentNew(address string, port string, collector MetricCollector, pollInterval time.Duration, reportInterval time.Duration, logger *log.Logger) *_HTTPAgent {
 	return &_HTTPAgent{
-		Client:          resty.New(),
-		Address:         address,
-		Port:            port,
-		Collector:       collector,
-		PollInterval:    pollInterval,
-		ReportIntervall: reportInterval,
-		Logger:          logger,
+		Client:         resty.New(),
+		Address:        address,
+		Port:           port,
+		Collector:      collector,
+		PollInterval:   pollInterval,
+		ReportInterval: reportInterval,
+		Logger:         logger,
 	}
 }
 
@@ -47,7 +50,7 @@ func (agent *_HTTPAgent) Run() {
 	wg.Add(1)
 	go func() {
 		for {
-			time.Sleep(agent.ReportIntervall * time.Second)
+			time.Sleep(agent.ReportInterval)
 			metrics := agent.Collector.GetMetrics()
 			agent.sendMetrics(metrics)
 		}

@@ -2,39 +2,39 @@ package httpserver
 
 import (
 	"fmt"
-	"log"
+	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
+	serverconfig "github.com/bazookajoe1/metrics-collector/internal/server-config"
+	"github.com/bazookajoe1/metrics-collector/internal/storage"
 	"net/http"
 	"os"
 
-	"github.com/bazookajoe1/metrics-collector/internal/metric"
 	"github.com/go-chi/chi/v5"
 )
-
-type Storage interface {
-	UpdateMetric(*metric.Metric)
-	ReadMetric(mType string, mName string) (string, error)
-	ReadAllMetrics() string
-}
 
 type _HTTPServer struct {
 	Address string
 	Port    string
 	Router  *chi.Mux
-	Strg    Storage
-	Logger  *log.Logger
+	Strg    storage.Storage
+	Logger  zlogger.ILogger
 }
 
-func ServerNew(address string, port string, storage Storage, logger *log.Logger) *_HTTPServer {
+func ServerNew(c serverconfig.IConfig) *_HTTPServer {
+	address := c.GetAddress()
+	port := c.GetPort()
+	strg := c.GetStorage()
+	logger := c.GetLogger()
 	return &_HTTPServer{
 		Address: address,
 		Port:    port,
-		Strg:    storage,
+		Strg:    strg,
 		Logger:  logger,
 		Router:  chi.NewRouter(),
 	}
 }
 
 func (serv *_HTTPServer) InitRoutes() {
+	serv.Router.Use(serv.LogMiddleware)
 
 	serv.Router.Get("/", serv.MetricAll)
 
@@ -50,6 +50,7 @@ func (serv *_HTTPServer) Run() {
 	aP := fmt.Sprintf("%s:%s", serv.Address, serv.Port)
 	err := http.ListenAndServe(aP, serv.Router)
 	if err != nil {
+		serv.Logger.Info(err.Error())
 		os.Exit(-1)
 	}
 }

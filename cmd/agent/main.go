@@ -1,6 +1,7 @@
 package main
 
 import (
+	agent_config "github.com/bazookajoe1/metrics-collector/internal/agent-config"
 	"log"
 	"os"
 
@@ -47,7 +48,9 @@ func main() {
 
 	collectorInst := collector.NewCollector(logger, allowedMetrics)
 
-	agent := httpagent.AgentNew("localhost", "8080", collectorInst, 2, 10, logger)
+	config := agent_config.NewConfig(collectorInst, logger)
+
+	agent := httpagent.AgentNew(config)
 
 	agent.Run()
 }

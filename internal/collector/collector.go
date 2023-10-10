@@ -86,6 +86,6 @@ func (c *collector) Run(pollInterval time.Duration) {
 		if err != nil {
 			c.Logger.Println(err)
 		}
-		time.Sleep(pollInterval * time.Second)
+		time.Sleep(pollInterval)
 	}
 }
