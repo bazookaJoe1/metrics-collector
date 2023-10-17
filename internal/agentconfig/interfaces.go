@@ -1,7 +1,7 @@
 package agentconfig
 
 import (
-	"log"
+	"github.com/bazookajoe1/metrics-collector/internal/logger"
 	"time"
 
 	"github.com/bazookajoe1/metrics-collector/internal/collector"
@@ -13,5 +13,5 @@ type IConfig interface {
 	GetPI() time.Duration
 	GetRI() time.Duration
 	GetCollector() collector.MetricCollector
-	GetLogger() *log.Logger
+	GetLogger() logger.ILogger
 }

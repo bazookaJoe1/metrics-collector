@@ -2,7 +2,9 @@ package httpagent
 
 import (
 	"fmt"
-	"log"
+	"github.com/bazookajoe1/metrics-collector/internal/datacompressor"
+	"github.com/bazookajoe1/metrics-collector/internal/logger"
+	"github.com/labstack/echo/v4"
 	"sync"
 	"time"
 
@@ -13,6 +15,14 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+const ContentEncodingGZIP = "gzip"
+
+var ReqHeaderParams = map[string]string{
+	echo.HeaderContentType:     echo.MIMEApplicationJSONCharsetUTF8,
+	echo.HeaderAcceptEncoding:  ContentEncodingGZIP,
+	echo.HeaderContentEncoding: ContentEncodingGZIP,
+}
+
 type _HTTPAgent struct {
 	Client         *resty.Client
 	Address        string
@@ -20,7 +30,7 @@ type _HTTPAgent struct {
 	Collector      collector.MetricCollector
 	PollInterval   time.Duration
 	ReportInterval time.Duration
-	Logger         *log.Logger
+	Logger         logger.ILogger
 }
 
 func AgentNew(c agentconfig.IConfig) *_HTTPAgent {
@@ -60,19 +70,44 @@ func (agent *_HTTPAgent) Run() {
 	wg.Wait()
 }
 
+// sendMetrics conducts cycle JSON marshalling and gzip compressing of metric.Metric structure.
+// After that it sends processed data to server
 func (agent *_HTTPAgent) sendMetrics(metrics []*metric.Metric) {
-	for _, metric := range metrics {
-		mName, mType, mValue := metric.GetParams()
-		endpoint := fmt.Sprintf("%s/%s/%s", mType, mName, mValue)
-		url := fmt.Sprintf("http://%s:%s/update/%s", agent.Address, agent.Port, endpoint)
-
-		response, err := agent.Client.R().SetHeader("Content-Type", "text/plain").Post(url)
+	for _, m := range metrics {
+		mC, err := metric.MConnect(m)
 		if err != nil {
-			agent.Logger.Println(err)
+			agent.Logger.Info(err.Error())
 			continue
 		}
 
-		agent.Logger.Println(url, response.StatusCode())
+		reqData, err := mC.MarshalJSON()
+		if err != nil {
+			agent.Logger.Error(err.Error())
+			continue
+		}
 
+		gzReqData, err := datacompressor.GZIPCompress(reqData) // gzip compressing
+		if err != nil {
+			agent.Logger.Error(err.Error())
+			continue
+		}
+
+		agent.Logger.Debug(fmt.Sprintf("plain: %s, compressed: %v", string(reqData), gzReqData))
+
+		url := fmt.Sprintf("http://%s:%s/update/", agent.Address, agent.Port)
+
+		response, err := agent.Client.R().SetHeaders(
+			ReqHeaderParams,
+		).SetBody(gzReqData).Post(url)
+
+		if err != nil {
+			agent.Logger.Error(err.Error())
+		}
+
+		agent.Logger.Info(fmt.Sprintf("{\"url\":\"%s\",\"response\":%v,\"status\":%d}",
+			url,
+			response.Body(),
+			response.StatusCode()),
+		)
 	}
 }

@@ -2,56 +2,53 @@ package httpserver
 
 import (
 	"fmt"
-	"net/http"
-	"os"
-
+	"github.com/bazookajoe1/metrics-collector/internal/datacompressor"
 	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
 	"github.com/bazookajoe1/metrics-collector/internal/serverconfig"
 	"github.com/bazookajoe1/metrics-collector/internal/storage"
-
-	"github.com/go-chi/chi/v5"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-type _HTTPServer struct {
+type HTTPServer struct {
 	Address string
 	Port    string
-	Router  *chi.Mux
+	Server  *echo.Echo
 	Strg    storage.Storage
 	Logger  zlogger.ILogger
 }
 
-func ServerNew(c serverconfig.IConfig) *_HTTPServer {
+func ServerNew(c serverconfig.IConfig, s storage.Storage, l zlogger.ILogger) *HTTPServer {
 	address := c.GetAddress()
 	port := c.GetPort()
-	strg := c.GetStorage()
-	logger := c.GetLogger()
-	return &_HTTPServer{
+	serv := &HTTPServer{
 		Address: address,
 		Port:    port,
-		Strg:    strg,
-		Logger:  logger,
-		Router:  chi.NewRouter(),
+		Server:  echo.New(),
+		Strg:    s,
+		Logger:  l,
 	}
+
+	return serv
 }
 
-func (serv *_HTTPServer) InitRoutes() {
-	serv.Router.Use(serv.LogMiddleware)
+func (serv *HTTPServer) InitRoutes() {
+	serv.Server.Use(middleware.Logger())
+	serv.Server.Use(datacompressor.ServerDecompressor)
 
-	serv.Router.Get("/", serv.MetricAll)
+	serv.Server.GET("/", serv.MetricAll)
 
-	serv.Router.Route("/update", func(r chi.Router) {
-		r.Post("/{type}/{name}/{value}", serv.MetricSave)
-	})
-	serv.Router.Route("/value", func(r chi.Router) {
-		r.Get("/{type}/{name}", serv.MetricRead)
-	})
+	gUpdate := serv.Server.Group("/update")
+	gUpdate.POST("/:type/:name/:value", serv.MetricSave)
+	gUpdate.POST("/", serv.MetricSaveJSON)
+
+	gValue := serv.Server.Group("/value")
+	gValue.GET("/:type/:name", serv.MetricRead)
+	gValue.POST("/", serv.MetricReadJSON)
 }
 
-func (serv *_HTTPServer) Run() {
+func (serv *HTTPServer) Run() {
 	aP := fmt.Sprintf("%s:%s", serv.Address, serv.Port)
-	err := http.ListenAndServe(aP, serv.Router)
-	if err != nil {
-		serv.Logger.Info(err.Error())
-		os.Exit(-1)
-	}
+	serv.Server.HideBanner = true
+	serv.Server.Logger.Fatal(serv.Server.Start(aP))
 }

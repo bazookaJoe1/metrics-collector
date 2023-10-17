@@ -1,20 +1,18 @@
 package agentenvparser
 
 import (
-	"time"
-
 	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 	"github.com/caarlos0/env/v9"
 )
 
-const invalidDuration time.Duration = 123456789
+const invalidDuration int = 123456789
 
 type EnvParams struct {
 	Address        []string `env:"ADDRESS" envSeparator:":"`
 	Host           string
 	Port           string
-	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
-	PollInterval   time.Duration `env:"POLL_INTERVAL"`
+	ReportInterval int `env:"REPORT_INTERVAL"`
+	PollInterval   int `env:"POLL_INTERVAL"`
 }
 
 func (a *EnvParams) GetAddr() string {
@@ -25,11 +23,11 @@ func (a *EnvParams) GetPort() string {
 	return a.Port
 }
 
-func (a *EnvParams) GetPI() time.Duration {
+func (a *EnvParams) GetPI() int {
 	return a.PollInterval
 }
 
-func (a *EnvParams) GetRI() time.Duration {
+func (a *EnvParams) GetRI() int {
 	return a.ReportInterval
 }
 

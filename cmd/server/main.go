@@ -3,24 +3,20 @@ package main
 import (
 	httpserver "github.com/bazookajoe1/metrics-collector/internal/http-server"
 	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
-	serverconfig "github.com/bazookajoe1/metrics-collector/internal/serverconfig"
+	"github.com/bazookajoe1/metrics-collector/internal/serverconfig"
 	"github.com/bazookajoe1/metrics-collector/internal/storage/memstorage"
 )
 
 func main() {
-	// TODO: create logger
 	logger := zlogger.NewZapLogger()
-	// TODO: init storage
-	servStorage := memstorage.NewInMemoryStorage()
 
-	config := serverconfig.NewConfig(servStorage, logger)
+	config := serverconfig.NewConfig() // read config for server
 
-	// TODO: init http server
-	server := httpserver.ServerNew(config)
+	servStorage := memstorage.NewInMemoryStorage(config, logger) // storage takes FileSaver from config
 
-	// TODO: register handlers
+	server := httpserver.ServerNew(config, servStorage, logger) // init server with config
+
 	server.InitRoutes()
 
-	// TODO: run server
 	server.Run()
 }

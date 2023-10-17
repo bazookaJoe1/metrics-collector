@@ -1,10 +1,8 @@
 package main
 
 import (
-	"log"
-	"os"
-
 	agent_config "github.com/bazookajoe1/metrics-collector/internal/agentconfig"
+	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
 
 	"github.com/bazookajoe1/metrics-collector/internal/collector"
 	httpagent "github.com/bazookajoe1/metrics-collector/internal/http-agent"
@@ -45,7 +43,7 @@ var allowedMetrics = [][2]string{
 }
 
 func main() {
-	logger := log.New(os.Stdout, "", log.Flags())
+	logger := zlogger.NewZapLogger()
 
 	collectorInst := collector.NewCollector(logger, allowedMetrics)
 

@@ -1,7 +1,13 @@
 package memstorage
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"github.com/bazookajoe1/metrics-collector/internal/logger"
+	"github.com/bazookajoe1/metrics-collector/internal/serverconfig"
+	"github.com/bazookajoe1/metrics-collector/internal/storage/filesaver"
+	"os"
 	"sort"
 	"strconv"
 	"sync"
@@ -9,21 +15,27 @@ import (
 	"github.com/bazookajoe1/metrics-collector/internal/metric"
 )
 
-type inMemoryStorage struct {
-	gauge   map[string]string
-	counter map[string]string
-	mu      sync.RWMutex
+type InMemoryStorage struct {
+	gauge     map[string]string
+	counter   map[string]string
+	fileSaver filesaver.FileSaver
+	logger    logger.ILogger
+	mu        sync.RWMutex
 }
 
-func NewInMemoryStorage() *inMemoryStorage {
-	s := &inMemoryStorage{}
+func NewInMemoryStorage(c serverconfig.IConfig, l logger.ILogger) *InMemoryStorage {
+	s := &InMemoryStorage{logger: l, fileSaver: c.GetFileSaver()}
 	s.gauge = make(map[string]string)
 	s.counter = make(map[string]string)
+
+	s.loadStorageFromFile()
+
+	go s.RunFileSaver()
 
 	return s
 }
 
-func (s *inMemoryStorage) ReadMetric(mType string, mName string) (string, error) {
+func (s *InMemoryStorage) ReadMetricValue(mType string, mName string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	switch mType {
@@ -40,7 +52,7 @@ func (s *inMemoryStorage) ReadMetric(mType string, mName string) (string, error)
 	return "", fmt.Errorf("invalid metric type %s", mType)
 }
 
-func (s *inMemoryStorage) ReadAllMetrics() string {
+func (s *InMemoryStorage) ReadAllMetrics() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -65,7 +77,55 @@ func (s *inMemoryStorage) ReadAllMetrics() string {
 	return out
 }
 
-func (s *inMemoryStorage) UpdateMetric(m *metric.Metric) {
+func (s *InMemoryStorage) ReadAllMetricsJSON() []byte {
+	var out bytes.Buffer
+
+	for name, _ := range s.gauge {
+		m, err := s.ReadEntireMetric(metric.Gauge, name)
+		if err != nil {
+			// TODO: logging
+			continue
+		}
+		mC, err := metric.MConnect(m)
+		if err != nil {
+			// TODO: logging
+			continue
+		}
+		jsonData, err := mC.MarshalJSON()
+		if err != nil {
+			// TODO: logging
+			continue
+		}
+
+		out.Write(jsonData)
+		out.Write([]byte{'\n'})
+	}
+
+	for name, _ := range s.counter {
+		m, err := s.ReadEntireMetric(metric.Counter, name)
+		if err != nil {
+			// TODO: logging
+			continue
+		}
+		mC, err := metric.MConnect(m)
+		if err != nil {
+			// TODO: logging
+			continue
+		}
+		jsonData, err := mC.MarshalJSON()
+		if err != nil {
+			// TODO: logging
+			continue
+		}
+
+		out.Write(jsonData)
+		out.Write([]byte{'\n'})
+	}
+
+	return out.Bytes()
+}
+
+func (s *InMemoryStorage) UpdateMetric(m *metric.Metric) {
 	// мы заранее понимаем, что все параметры правильные, поэтому ничего проверять не будем
 	mName, mType, mValue := m.GetParams()
 	switch mType {
@@ -91,5 +151,105 @@ func (s *inMemoryStorage) UpdateMetric(m *metric.Metric) {
 		tempCVal += counterIncrement
 		s.counter[mName] = strconv.FormatInt(tempCVal, 10)
 		s.mu.Unlock()
+	}
+
+	if s.fileSaver.SynchronizedSaving { // save to file when storage is updated (synchronized)
+		err := s.fileSaver.Save(s.ReadAllMetricsJSON())
+		if err != nil {
+			s.logger.Error(err.Error())
+		}
+	}
+}
+
+func (s *InMemoryStorage) ReadEntireMetric(mType string, mName string) (*metric.Metric, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	switch mType {
+	case metric.Gauge:
+		if val, ok := s.gauge[mName]; ok {
+			m, err := metric.NewMetric(mName, metric.Gauge, val)
+			if err != nil {
+				return nil, fmt.Errorf("cannot return metric: %s", mName)
+			}
+			return m, nil
+		}
+		return nil, fmt.Errorf("metric %s not found", mType)
+	case metric.Counter:
+		if val, ok := s.counter[mName]; ok {
+			m, err := metric.NewMetric(mName, metric.Counter, val)
+			if err != nil {
+				return nil, fmt.Errorf("cannot return metric: %s", mName)
+			}
+			return m, nil
+		}
+		return nil, fmt.Errorf("metric %s not found", mType)
+	}
+
+	return nil, fmt.Errorf("invalid metric type %s", mType)
+}
+
+func (s *InMemoryStorage) SetFileSaver(fs filesaver.FileSaver) {
+	s.fileSaver = fs
+}
+
+// RunFileSaver according to SynchronizedSaving flag starts saving of storage to file with period set in config
+func (s *InMemoryStorage) RunFileSaver() {
+	if !s.fileSaver.SynchronizedSaving {
+		for {
+			select {
+			case <-s.fileSaver.SaveTicker.C:
+				err := s.fileSaver.Save(s.ReadAllMetricsJSON())
+				if err != nil {
+					s.logger.Error(err.Error())
+				} else {
+					s.logger.Debug("saved to file")
+				}
+			}
+		}
+	}
+}
+
+// loadStorageFromFile check whether filesaver.FileSaver Restore flag is set and loads
+// storage contents from file provided by filesaver.FileSaver
+func (s *InMemoryStorage) loadStorageFromFile() {
+	if s.fileSaver.Restore { // is flag set
+		cache, err := os.OpenFile(s.fileSaver.FilePath, os.O_CREATE|os.O_RDONLY, 0644)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return
+		}
+		defer cache.Close()
+
+		scanner := bufio.NewScanner(cache)
+
+		for scanner.Scan() { // read line by line
+			data := scanner.Bytes()
+			mC := &metric.MConnector{}
+			err = mC.UnmarshalJSON(data) // try to unmarshal data into MConnector
+			if err != nil {
+				s.logger.Error(err.Error())
+				continue
+			}
+
+			m, err := metric.MDisConnect(mC) // transform
+			if err != nil {
+				s.logger.Error(err.Error())
+				continue
+			}
+
+			switch m.GetType() {
+			case metric.Gauge:
+				s.gauge[m.GetName()] = m.GetValue()
+			case metric.Counter:
+				s.counter[m.GetName()] = m.GetValue()
+			default:
+				s.logger.Error(fmt.Sprintf("invalid metric type: %v", m))
+				continue
+			}
+
+		}
+
+		s.logger.Debug("loaded storage contents from file")
+
 	}
 }

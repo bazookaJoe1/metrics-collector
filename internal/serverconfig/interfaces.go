@@ -1,13 +1,10 @@
 package serverconfig
 
-import (
-	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
-	"github.com/bazookajoe1/metrics-collector/internal/storage"
-)
+import "github.com/bazookajoe1/metrics-collector/internal/storage/filesaver"
 
+// IConfig is an interface providing methods to configure httpserver.HTTPServer params
 type IConfig interface {
 	GetAddress() string
 	GetPort() string
-	GetStorage() storage.Storage
-	GetLogger() zlogger.ILogger
+	GetFileSaver() filesaver.FileSaver
 }

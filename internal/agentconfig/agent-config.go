@@ -2,7 +2,7 @@ package agentconfig
 
 import (
 	"fmt"
-	"log"
+	"github.com/bazookajoe1/metrics-collector/internal/logger"
 	"time"
 
 	aap "github.com/bazookajoe1/metrics-collector/internal/agentargparser"
@@ -12,13 +12,13 @@ import (
 )
 
 const emptyString = ""
-const invalidDuration time.Duration = 123456789
+const invalidDuration = time.Duration(123456789) * time.Second
 
 type IParams interface {
 	GetAddr() string
 	GetPort() string
-	GetPI() time.Duration
-	GetRI() time.Duration
+	GetPI() int
+	GetRI() int
 }
 
 type Config struct {
@@ -27,10 +27,10 @@ type Config struct {
 	collector      collector.MetricCollector
 	pollInterval   time.Duration
 	reportInterval time.Duration
-	logger         *log.Logger
+	logger         logger.ILogger
 }
 
-func NewConfig(collector collector.MetricCollector, logger *log.Logger) *Config {
+func NewConfig(collector collector.MetricCollector, logger logger.ILogger) *Config {
 	c := &Config{
 		address:        emptyString,
 		port:           emptyString,
@@ -53,12 +53,12 @@ func NewConfig(collector collector.MetricCollector, logger *log.Logger) *Config 
 
 func (c *Config) UpdateConfig(p ...IParams) error {
 	for _, paramInstance := range p {
-		pollInterval := paramInstance.GetPI()
+		pollInterval := time.Duration(paramInstance.GetPI()) * time.Second
 		if pollInterval != invalidDuration {
 			c.pollInterval = pollInterval
 		}
 
-		reportInterval := paramInstance.GetRI()
+		reportInterval := time.Duration(paramInstance.GetRI()) * time.Second
 		if reportInterval != invalidDuration {
 			c.reportInterval = reportInterval
 		}
@@ -109,6 +109,6 @@ func (c *Config) GetCollector() collector.MetricCollector {
 	return c.collector
 }
 
-func (c *Config) GetLogger() *log.Logger {
+func (c *Config) GetLogger() logger.ILogger {
 	return c.logger
 }

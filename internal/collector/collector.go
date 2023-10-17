@@ -2,7 +2,7 @@ package collector
 
 import (
 	"fmt"
-	"log"
+	"github.com/bazookajoe1/metrics-collector/internal/logger"
 	"math/rand"
 	"reflect"
 	"runtime"
@@ -16,17 +16,17 @@ import (
 type collector struct {
 	stats  map[string]*metric.Metric
 	mux    sync.RWMutex
-	Logger *log.Logger
+	Logger logger.ILogger
 }
 
 // Create instance of collector and return it. Specify needed metrics in allowedMetrics in the format: [][2]string{ {name, type}, ... }
-func NewCollector(logger *log.Logger, allowedMetrics [][2]string) *collector {
+func NewCollector(logger logger.ILogger, allowedMetrics [][2]string) *collector {
 	c := &collector{Logger: logger}
 	c.stats = make(map[string]*metric.Metric)
 	for _, template := range allowedMetrics {
 		metric, err := metric.NewMetric(template[0], template[1], "0")
 		if err != nil {
-			c.Logger.Fatal(err)
+			c.Logger.Fatal(err.Error())
 		}
 		c.stats[template[0]] = metric
 	}
@@ -46,14 +46,14 @@ func (c *collector) CollectMetrics() error {
 		if val.IsValid() { // смотрим есть такое поле в струкутуре
 			err := c.stats[key].UpdateMetric(fmt.Sprintf("%v", reflectedStatValues.FieldByName(key)))
 			if err != nil {
-				c.Logger.Println(err)
+				c.Logger.Info(err.Error())
 			}
 		}
 		_, mType, _ := c.stats[key].GetParams()
 		if mType == metric.Counter { // сделаем обновления сразу для всех counter
 			err := c.stats[key].UpdateMetric("1")
 			if err != nil {
-				c.Logger.Println(err)
+				c.Logger.Info(err.Error())
 			}
 		}
 	}
@@ -84,7 +84,7 @@ func (c *collector) Run(pollInterval time.Duration) {
 	for {
 		err := c.CollectMetrics()
 		if err != nil {
-			c.Logger.Println(err)
+			c.Logger.Info(err.Error())
 		}
 		time.Sleep(pollInterval)
 	}

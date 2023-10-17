@@ -1,3 +1,4 @@
+// Package metric TODO: change GetParams() to Get[Name, Type, Value]()
 package metric
 
 import (
@@ -5,6 +6,7 @@ import (
 	"strconv"
 )
 
+const emptyString = ""
 const Counter = "counter"
 const Gauge = "gauge"
 
@@ -20,21 +22,33 @@ func NewMetric(mName, mType, mValue string) (*Metric, error) {
 		case Gauge:
 			err := checkGaugeValue(mValue)
 			if err != nil {
-				return &Metric{}, err
+				return nil, err
 			}
 		case Counter:
 			err := checkCounterValue(mValue)
 			if err != nil {
-				return &Metric{}, err
+				return nil, err
 			}
 		default:
-			return &Metric{}, fmt.Errorf("error metric type: %v", mType)
+			return nil, fmt.Errorf("error metric type: %v", mType)
 		}
 	} else {
-		return &Metric{}, fmt.Errorf("error metric name: %v", mName)
+		return nil, fmt.Errorf("error metric name: %v", mName)
 	}
 
 	return &Metric{mType: mType, mName: mName, mValue: mValue}, nil
+}
+
+func (m *Metric) GetName() string {
+	return m.mName
+}
+
+func (m *Metric) GetType() string {
+	return m.mType
+}
+
+func (m *Metric) GetValue() string {
+	return m.mValue
 }
 
 // Returns metric params in order: name, type, value
@@ -69,37 +83,6 @@ func (m *Metric) UpdateMetric(value string) error {
 		m.mValue = strconv.FormatInt(counter, 10)
 	}
 	return nil
-}
-
-var AllowedMetrics = []string{
-	"Alloc",
-	"BuckHashSys",
-	"Frees",
-	"GCCPUFraction",
-	"GCSys",
-	"HeapAlloc",
-	"HeapIdle",
-	"HeapInuse",
-	"HeapObjects",
-	"HeapReleased",
-	"HeapSys",
-	"LastGC",
-	"Lookups",
-	"MCacheInuse",
-	"MCacheSys",
-	"MSpanInuse",
-	"MSpanSys",
-	"Mallocs",
-	"NextGC",
-	"NumForcedGC",
-	"NumGC",
-	"OtherSys",
-	"PauseTotalNs",
-	"StackInuse",
-	"StackSys",
-	"Sys",
-	"TotalAlloc",
-	"RandomValue",
 }
 
 // Checks metric name is not empty

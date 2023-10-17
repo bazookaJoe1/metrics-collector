@@ -9,6 +9,7 @@ type ILogger interface {
 	Debug(string)
 	Warn(string)
 	Error(string)
+	Fatal(string)
 }
 
 type ZapLogger struct {
@@ -50,4 +51,8 @@ func (l *ZapLogger) Warn(s string) {
 
 func (l *ZapLogger) Error(s string) {
 	l.logger.Error(s)
+}
+
+func (l *ZapLogger) Fatal(s string) {
+	l.logger.Fatal(s)
 }
