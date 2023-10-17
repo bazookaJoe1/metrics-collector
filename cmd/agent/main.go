@@ -1,7 +1,7 @@
 package main
 
 import (
-	agent_config "github.com/bazookajoe1/metrics-collector/internal/agentconfig"
+	agentconfig "github.com/bazookajoe1/metrics-collector/internal/agentconfig"
 	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
 
 	"github.com/bazookajoe1/metrics-collector/internal/collector"
@@ -47,7 +47,7 @@ func main() {
 
 	collectorInst := collector.NewCollector(logger, allowedMetrics)
 
-	config := agent_config.NewConfig(collectorInst, logger)
+	config := agentconfig.NewConfig(collectorInst, logger)
 
 	agent := httpagent.AgentNew(config)
 

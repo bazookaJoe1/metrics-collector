@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"log"
+	zlogger "github.com/bazookajoe1/metrics-collector/internal/logger"
 	"strconv"
 	"testing"
 
@@ -42,7 +42,7 @@ var allowedMetrics = [][2]string{
 }
 
 func TestCollector_CollectMetrics(t *testing.T) {
-	c := NewCollector(log.New(nil, "", 0), allowedMetrics)
+	c := NewCollector(zlogger.NewZapLogger(), allowedMetrics)
 
 	for counter := 1; counter < 10000; counter++ {
 		err := c.CollectMetrics()
