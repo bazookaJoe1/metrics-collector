@@ -64,7 +64,7 @@ func MDisConnect(mC *MConnector) (*Metric, error) {
 
 	case Gauge:
 		m.mType = mC.MType
-		value := strconv.FormatFloat(*mC.Value, 'f', 5, 64)
+		value := strconv.FormatFloat(*mC.Value, 'f', 10, 64)
 		err := checkGaugeValue(value)
 		if err != nil {
 			return nil, fmt.Errorf("bad counter value")
