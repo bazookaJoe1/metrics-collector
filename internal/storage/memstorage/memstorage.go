@@ -80,7 +80,7 @@ func (s *InMemoryStorage) ReadAllMetrics() string {
 func (s *InMemoryStorage) ReadAllMetricsJSON() []byte {
 	var out bytes.Buffer
 
-	for name, _ := range s.gauge {
+	for name := range s.gauge {
 		m, err := s.ReadEntireMetric(metric.Gauge, name)
 		if err != nil {
 			// TODO: logging
@@ -101,7 +101,7 @@ func (s *InMemoryStorage) ReadAllMetricsJSON() []byte {
 		out.Write([]byte{'\n'})
 	}
 
-	for name, _ := range s.counter {
+	for name := range s.counter {
 		m, err := s.ReadEntireMetric(metric.Counter, name)
 		if err != nil {
 			// TODO: logging
@@ -195,15 +195,12 @@ func (s *InMemoryStorage) SetFileSaver(fs filesaver.FileSaver) {
 // RunFileSaver according to SynchronizedSaving flag starts saving of storage to file with period set in config
 func (s *InMemoryStorage) RunFileSaver() {
 	if !s.fileSaver.SynchronizedSaving {
-		for {
-			select {
-			case <-s.fileSaver.SaveTicker.C:
-				err := s.fileSaver.Save(s.ReadAllMetricsJSON())
-				if err != nil {
-					s.logger.Error(err.Error())
-				} else {
-					s.logger.Debug("saved to file")
-				}
+		for range s.fileSaver.SaveTicker.C {
+			err := s.fileSaver.Save(s.ReadAllMetricsJSON())
+			if err != nil {
+				s.logger.Error(err.Error())
+			} else {
+				s.logger.Debug("saved to file")
 			}
 		}
 	}

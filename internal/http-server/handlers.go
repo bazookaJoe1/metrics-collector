@@ -2,11 +2,9 @@ package httpserver
 
 import (
 	"github.com/bazookajoe1/metrics-collector/internal/datacompressor"
+	"github.com/bazookajoe1/metrics-collector/internal/metric"
 	"github.com/labstack/echo/v4"
 	"net/http"
-
-	"github.com/bazookajoe1/metrics-collector/internal/metric"
-	_ "github.com/labstack/echo/v4"
 )
 
 const emptyString = ""
