@@ -30,7 +30,6 @@ func ServerNew(c IConfig, s IStorage, l ILogger) *HTTPServer {
 func (s *HTTPServer) InitRoutes() {
 	s.Server.Use(Decompressor)
 	s.Server.Use(middleware.Logger())
-	s.Server.Use(middleware.Gzip())
 
 	s.Server.RouteNotFound("/*", func(c echo.Context) error { return c.NoContent(http.StatusNotFound) })
 

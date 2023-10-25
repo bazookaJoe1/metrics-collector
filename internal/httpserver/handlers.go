@@ -82,9 +82,9 @@ func (s *HTTPServer) ReceiveMetricJSON(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	//compressedData := Compressor(c, sendData)
+	compressedData := Compressor(c, sendData)
 
-	return c.JSONBlob(http.StatusOK, sendData)
+	return c.JSONBlob(http.StatusOK, compressedData)
 }
 
 // SendMetricJSON is the handler responsible for getting metric from storage according to parameters got
@@ -106,9 +106,9 @@ func (s *HTTPServer) SendMetricJSON(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	//compressedData := Compressor(c, sendData)
+	compressedData := Compressor(c, sendData)
 
 	s.Logger.Debug(fmt.Sprintf("response: %s", sendData))
 
-	return c.JSONBlob(http.StatusOK, sendData)
+	return c.JSONBlob(http.StatusOK, compressedData)
 }
