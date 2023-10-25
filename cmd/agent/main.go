@@ -39,7 +39,7 @@ var allowedMetrics = pcstats.Metrics{
 	{ID: "Sys", MType: pcstats.Gauge},
 	{ID: "TotalAlloc", MType: pcstats.Gauge},
 	{ID: "RandomValue", MType: pcstats.Gauge},
-	{ID: "Pollcount", MType: pcstats.Counter},
+	{ID: "PollCount", MType: pcstats.Counter},
 }
 
 func main() {
