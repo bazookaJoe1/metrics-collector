@@ -204,13 +204,13 @@ func (l MockLogger) Fatal(string) {}
 
 func request(method, path string, body io.Reader, e *echo.Echo, header http.Header) (int, string) { // func taken from echo sources
 	req := httptest.NewRequest(method, path, body)
-	if header != nil {
-		for key, values := range header {
-			for _, value := range values {
-				req.Header.Add(key, value)
-			}
+
+	for key, values := range header {
+		for _, value := range values {
+			req.Header.Add(key, value)
 		}
 	}
+
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	return rec.Code, rec.Body.String()
