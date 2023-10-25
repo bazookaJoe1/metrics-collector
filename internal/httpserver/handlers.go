@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/bazookajoe1/metrics-collector/internal/pcstats"
 	"github.com/labstack/echo/v4"
-	"io"
 	"net/http"
 )
 
@@ -54,7 +53,9 @@ func (s *HTTPServer) SendAllMetrics(c echo.Context) error {
 
 	responseString := pcstats.MetricSliceToString(metrics)
 
-	return c.String(http.StatusOK, responseString)
+	compressedData := Compressor(c, []byte(responseString))
+
+	return c.String(http.StatusOK, string(compressedData))
 }
 
 // ReceiveMetricJSON is the handler responsible for receiving metrics in JSON format.
@@ -84,14 +85,6 @@ func (s *HTTPServer) ReceiveMetricJSON(c echo.Context) error {
 	}
 
 	compressedData := Compressor(c, sendData)
-
-	body := c.Request().Body
-	if body != nil {
-		data, err := io.ReadAll(body)
-		if err == nil {
-			s.Logger.Debug(fmt.Sprintf("request: %s", data))
-		}
-	}
 
 	return c.JSONBlob(http.StatusOK, compressedData)
 }
