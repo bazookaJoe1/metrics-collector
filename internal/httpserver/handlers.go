@@ -3,6 +3,7 @@ package httpserver
 import (
 	"github.com/bazookajoe1/metrics-collector/internal/pcstats"
 	"github.com/labstack/echo/v4"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -81,6 +82,11 @@ func (s *HTTPServer) ReceiveMetricJSON(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	// TODO delete this
+	body, err := c.Request().GetBody()
+	data, err := ioutil.ReadAll(body)
+	s.Logger.Debug(string(data))
+
 	compressedData := Compressor(c, sendData)
 
 	return c.JSONBlob(http.StatusOK, compressedData)
@@ -106,6 +112,8 @@ func (s *HTTPServer) SendMetricJSON(c echo.Context) error {
 	}
 
 	compressedData := Compressor(c, sendData)
+
+	s.Logger.Debug(string(sendData))
 
 	return c.JSONBlob(http.StatusOK, compressedData)
 }
