@@ -85,8 +85,8 @@ func (s *HTTPServer) ReceiveMetricJSON(c echo.Context) error {
 
 	compressedData := Compressor(c, sendData)
 
-	body, err := c.Request().GetBody()
-	if err == nil {
+	body := c.Request().Body
+	if body != nil {
 		data, err := io.ReadAll(body)
 		if err == nil {
 			s.Logger.Debug(fmt.Sprintf("request: %s", data))
