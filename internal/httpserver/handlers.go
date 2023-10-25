@@ -53,9 +53,7 @@ func (s *HTTPServer) SendAllMetrics(c echo.Context) error {
 
 	responseString := pcstats.MetricSliceToString(metrics)
 
-	compressedData := Compressor(c, []byte(responseString))
-
-	return c.String(http.StatusOK, string(compressedData))
+	return c.String(http.StatusOK, responseString)
 }
 
 // ReceiveMetricJSON is the handler responsible for receiving metrics in JSON format.
@@ -84,9 +82,9 @@ func (s *HTTPServer) ReceiveMetricJSON(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	compressedData := Compressor(c, sendData)
+	//compressedData := Compressor(c, sendData)
 
-	return c.JSONBlob(http.StatusOK, compressedData)
+	return c.JSONBlob(http.StatusOK, sendData)
 }
 
 // SendMetricJSON is the handler responsible for getting metric from storage according to parameters got
@@ -108,9 +106,9 @@ func (s *HTTPServer) SendMetricJSON(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	compressedData := Compressor(c, sendData)
+	//compressedData := Compressor(c, sendData)
 
 	s.Logger.Debug(fmt.Sprintf("response: %s", sendData))
 
-	return c.JSONBlob(http.StatusOK, compressedData)
+	return c.JSONBlob(http.StatusOK, sendData)
 }
