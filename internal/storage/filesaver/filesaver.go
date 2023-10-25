@@ -54,12 +54,7 @@ func (f *FileSaver) Save(d []byte) error {
 	if err != nil {
 		return err
 	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-
-		}
-	}(file)
+	defer file.Close()
 
 	_, err = file.Write(d)
 	if err != nil {
