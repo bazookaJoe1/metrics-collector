@@ -1,7 +1,7 @@
 package serverenvparser
 
 import (
-	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
+	"github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 	"github.com/caarlos0/env/v9"
 )
 
@@ -50,11 +50,11 @@ func EnvParse() *EnvParams {
 
 func (a *EnvParams) splitHP() {
 	if len(a.Address) >= 2 {
-		err := npv.ValidateIP(a.Address[0])
+		err := netparamsvalidator.ValidateIP(a.Address[0])
 		if err != nil {
 			return
 		}
-		err = npv.ValidatePort(a.Address[1])
+		err = netparamsvalidator.ValidatePort(a.Address[1])
 		if err != nil {
 			return
 		}

@@ -1,16 +1,6 @@
-package logger
+package logging
 
-import (
-	"go.uber.org/zap"
-)
-
-type ILogger interface {
-	Info(string)
-	Debug(string)
-	Warn(string)
-	Error(string)
-	Fatal(string)
-}
+import "go.uber.org/zap"
 
 type ZapLogger struct {
 	logger *zap.Logger

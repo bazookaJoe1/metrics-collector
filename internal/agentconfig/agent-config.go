@@ -2,13 +2,10 @@ package agentconfig
 
 import (
 	"fmt"
-	"github.com/bazookajoe1/metrics-collector/internal/logger"
+	"github.com/bazookajoe1/metrics-collector/internal/agentargparser"
+	"github.com/bazookajoe1/metrics-collector/internal/agentenvparser"
+	"github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 	"time"
-
-	aap "github.com/bazookajoe1/metrics-collector/internal/agentargparser"
-	aep "github.com/bazookajoe1/metrics-collector/internal/agentenvparser"
-	"github.com/bazookajoe1/metrics-collector/internal/collector"
-	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 )
 
 const emptyString = ""
@@ -24,24 +21,20 @@ type IParams interface {
 type Config struct {
 	address        string
 	port           string
-	collector      collector.MetricCollector
 	pollInterval   time.Duration
 	reportInterval time.Duration
-	logger         logger.ILogger
 }
 
-func NewConfig(collector collector.MetricCollector, logger logger.ILogger) *Config {
+func NewConfig() *Config {
 	c := &Config{
 		address:        emptyString,
 		port:           emptyString,
-		collector:      collector,
 		pollInterval:   2 * time.Second,
 		reportInterval: 10 * time.Second,
-		logger:         logger,
 	}
 
-	clArgsParams := aap.ArgParse()
-	envParams := aep.EnvParse()
+	clArgsParams := agentargparser.ArgParse()
+	envParams := agentenvparser.EnvParse()
 	err := c.UpdateConfig(clArgsParams, envParams)
 	if err != nil {
 		panic(err)
@@ -64,13 +57,13 @@ func (c *Config) UpdateConfig(p ...IParams) error {
 		}
 
 		address := paramInstance.GetAddr()
-		err := npv.ValidateIP(address)
+		err := netparamsvalidator.ValidateIP(address)
 		if err == nil {
 			c.address = address
 		}
 
 		port := paramInstance.GetPort()
-		err = npv.ValidatePort(port)
+		err = netparamsvalidator.ValidatePort(port)
 		if err == nil {
 			c.port = port
 		}
@@ -97,18 +90,10 @@ func (c *Config) GetPort() string {
 	return c.port
 }
 
-func (c *Config) GetPI() time.Duration {
+func (c *Config) GetPollInterval() time.Duration {
 	return c.pollInterval
 }
 
-func (c *Config) GetRI() time.Duration {
+func (c *Config) GetReportInterval() time.Duration {
 	return c.reportInterval
-}
-
-func (c *Config) GetCollector() collector.MetricCollector {
-	return c.collector
-}
-
-func (c *Config) GetLogger() logger.ILogger {
-	return c.logger
 }

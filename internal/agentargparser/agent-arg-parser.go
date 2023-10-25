@@ -3,7 +3,7 @@ package agentargparser
 import (
 	"flag"
 	"fmt"
-	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
+	"github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
 	"strings"
 )
 
@@ -24,12 +24,12 @@ func (a *CLArgsParams) Set(s string) error {
 		return fmt.Errorf("need address in a form Host:Port")
 	}
 
-	err := npv.ValidateIP(hp[0])
+	err := netparamsvalidator.ValidateIP(hp[0])
 	if err != nil {
 		return err
 	}
 
-	err = npv.ValidatePort(hp[1])
+	err = netparamsvalidator.ValidatePort(hp[1])
 	if err != nil {
 		return err
 	}

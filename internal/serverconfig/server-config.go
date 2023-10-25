@@ -2,13 +2,12 @@ package serverconfig
 
 import (
 	"fmt"
+	"github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
+	"github.com/bazookajoe1/metrics-collector/internal/serverargparser"
+	"github.com/bazookajoe1/metrics-collector/internal/serverenvparser"
 	"github.com/bazookajoe1/metrics-collector/internal/storage/filesaver"
 	"sync"
 	"time"
-
-	npv "github.com/bazookajoe1/metrics-collector/internal/netparamsvalidator"
-	sap "github.com/bazookajoe1/metrics-collector/internal/serverargparser"
-	sep "github.com/bazookajoe1/metrics-collector/internal/serverenvparser"
 )
 
 const emptyString = ""
@@ -41,8 +40,8 @@ func NewConfig() *Config {
 		fs:      filesaver.NewFileSaver(300, "./tmp/metrics-db.json", true),
 	}
 
-	clArgsParams := sap.ArgParse() // get parameters from command line arguments
-	envParams := sep.EnvParse()    // get parameters from environment variables
+	clArgsParams := serverargparser.ArgParse() // get parameters from command line arguments
+	envParams := serverenvparser.EnvParse()    // get parameters from environment variables
 	err := c.UpdateConfig(clArgsParams, envParams)
 	if err != nil {
 		panic(err)
@@ -58,13 +57,13 @@ func NewConfig() *Config {
 func (c *Config) UpdateConfig(p ...IParams) error {
 	for _, paramInstance := range p {
 		address := paramInstance.GetAddr()
-		err := npv.ValidateIP(address)
+		err := netparamsvalidator.ValidateIP(address)
 		if err == nil {
 			c.address = address
 		}
 
 		port := paramInstance.GetPort()
-		err = npv.ValidatePort(port)
+		err = netparamsvalidator.ValidatePort(port)
 		if err == nil {
 			c.port = port
 		}
