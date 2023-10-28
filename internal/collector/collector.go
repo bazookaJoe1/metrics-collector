@@ -1,91 +1,138 @@
 package collector
 
 import (
-	"fmt"
-	"log"
+	"context"
+	"github.com/bazookajoe1/metrics-collector/internal/pcstats"
 	"math/rand"
 	"reflect"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
-
-	"github.com/bazookajoe1/metrics-collector/internal/metric"
 )
 
-type collector struct {
-	stats  map[string]*metric.Metric
-	mux    sync.RWMutex
-	Logger *log.Logger
+type Collector struct {
+	stats  map[string]*pcstats.Metric
+	logger ILogger
+	mu     sync.RWMutex
 }
 
-// Create instance of collector and return it. Specify needed metrics in allowedMetrics in the format: [][2]string{ {name, type}, ... }
-func NewCollector(logger *log.Logger, allowedMetrics [][2]string) *collector {
-	c := &collector{Logger: logger}
-	c.stats = make(map[string]*metric.Metric)
+// NewCollector create the instance of Collector. Pool of collected metrics is assigned in allowedMetrics.
+func NewCollector(allowedMetrics pcstats.Metrics, logger ILogger) *Collector {
+	c := &Collector{
+		stats:  make(map[string]*pcstats.Metric),
+		logger: logger,
+	}
+
 	for _, template := range allowedMetrics {
-		metric, err := metric.NewMetric(template[0], template[1], "0")
-		if err != nil {
-			c.Logger.Fatal(err)
+		switch template.MType {
+		case pcstats.Gauge:
+			metric, err := pcstats.NewMetric(
+				template.MType,
+				template.ID,
+				new(float64),
+				nil,
+			)
+			if err != nil {
+				c.logger.Fatal(err.Error())
+			}
+
+			c.stats[metric.GetName()] = metric
+		case pcstats.Counter:
+			metric, err := pcstats.NewMetric(
+				template.MType,
+				template.ID,
+				nil,
+				new(int64),
+			)
+			if err != nil {
+				c.logger.Fatal(err.Error())
+			}
+
+			c.stats[metric.GetName()] = metric
 		}
-		c.stats[template[0]] = metric
+
 	}
 
 	return c
 }
 
-func (c *collector) CollectMetrics() error {
+// Collect collects metric values from runtime.MemStats and updates appropriate metric in Collector.
+// All counters increments automatically. RandomValue also is updated.
+func (c *Collector) Collect() {
 	var stats runtime.MemStats
 	runtime.ReadMemStats(&stats)
 
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	reflectedStatValues := reflect.ValueOf(stats)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	reflectedStatsValues := reflect.ValueOf(stats) // we use reflection to easy find `ID` of metric in runtime.MemStats
 	for key := range c.stats {
-		val := reflectedStatValues.FieldByName(key)
-		if val.IsValid() { // смотрим есть такое поле в струкутуре
-			err := c.stats[key].UpdateMetric(fmt.Sprintf("%v", reflectedStatValues.FieldByName(key)))
-			if err != nil {
-				c.Logger.Println(err)
+		value := reflectedStatsValues.FieldByName(key)
+
+		// update metrics from runtime.MemStats
+		if value.IsValid() { // does such field exist and can we typecast it to float.
+			switch { // runtime.MemStats contains only Float64 and UInt values (that agreed with allowedMetric)
+			case value.CanFloat(): // if value is float, we store it without direct typecasting
+				err := c.stats[key].UpdateGauge(value.Float())
+				if err != nil {
+					c.logger.Error(err.Error())
+				}
+			case value.CanUint(): // if value is uint, we typecast it to float
+				err := c.stats[key].UpdateGauge(float64(value.Uint()))
+				if err != nil {
+					c.logger.Error(err.Error())
+				}
 			}
 		}
-		_, mType, _ := c.stats[key].GetParams()
-		if mType == metric.Counter { // сделаем обновления сразу для всех counter
-			err := c.stats[key].UpdateMetric("1")
+
+		// update counter if type is counter
+		if c.stats[key].GetType() == pcstats.Counter { // if type is counter we update it (by default runtime.MemStats
+			// doesn't contain counters)
+			err := c.stats[key].IncrementCounter(1)
 			if err != nil {
-				c.Logger.Println(err)
+				c.logger.Error(err.Error())
+			}
+		}
+
+		// update RandomValue
+		for { // we don't need zero random value
+			randomValue := rand.NormFloat64()
+			if randomValue != 0 {
+				err := c.stats["RandomValue"].UpdateGauge(randomValue)
+				if err != nil {
+					c.logger.Error(err.Error())
+				}
+				break
 			}
 		}
 	}
-
-	for { // we don't need zero random value
-		randomValue := rand.NormFloat64()
-		if randomValue != 0 {
-			c.stats["RandomValue"].UpdateMetric(strconv.FormatFloat(float64(randomValue), 'f', 3, 64))
-			break
-		}
-	}
-
-	return nil
 }
 
-func (c *collector) GetMetrics() []*metric.Metric {
-	metrics := make([]*metric.Metric, 0, len(c.stats))
-	c.mux.RLock()
+// GetMetrics return all metrics from Collector.
+func (c *Collector) GetMetrics() pcstats.Metrics {
+	var out = make(pcstats.Metrics, 0, len(c.stats))
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	for _, metric := range c.stats {
-		metrics = append(metrics, metric)
+		out = append(out, *metric)
 	}
-	c.mux.RUnlock()
-	return metrics
 
+	return out
 }
 
-func (c *collector) Run(pollInterval time.Duration) {
+// Run starts Collector. Metrics are collected with interval = pollInterval.
+func (c *Collector) Run(ctx context.Context, pollInterval time.Duration) {
+	ticker := time.NewTicker(pollInterval)
 	for {
-		err := c.CollectMetrics()
-		if err != nil {
-			c.Logger.Println(err)
+		select {
+		case <-ctx.Done():
+			ticker.Stop()
+			c.logger.Debug("collector context cancelling; return")
+			return
+		case <-ticker.C:
+			c.Collect()
 		}
-		time.Sleep(pollInterval * time.Second)
 	}
 }
