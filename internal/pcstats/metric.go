@@ -271,7 +271,28 @@ func MetricSliceToString(metrics Metrics) string {
 			continue
 		}
 		outString += fmt.Sprintf("%s: %s", metric.GetName(), value)
-		outString += "\n"
+		outString += "\r"
+	}
+
+	return outString
+}
+
+// MetricSliceToHTMLString performs conversion of Metric slice to formatted string,
+// like in MetricSliceToString, but with <br> instead of "\n".
+// Each string representation of Metric is separated from another by '\n'.
+// Metrics in output string is sorted by type and name.
+func MetricSliceToHTMLString(metrics Metrics) string {
+	outString := ""
+
+	sort.Sort(metrics)
+
+	for _, metric := range metrics {
+		value, err := metric.GetStringValue()
+		if err != nil {
+			continue
+		}
+		outString += fmt.Sprintf("%s: %s", metric.GetName(), value)
+		outString += "<br>"
 	}
 
 	return outString

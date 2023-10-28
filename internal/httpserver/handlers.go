@@ -44,16 +44,20 @@ func (s *HTTPServer) SendMetricString(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError) // this case should not occur, but who knows
 	}
 
-	return c.String(http.StatusOK, stringValue)
+	compressedData := Compressor(c, []byte(stringValue))
+
+	return c.Blob(http.StatusOK, echo.MIMETextPlain, compressedData)
 }
 
-// SendAllMetrics is the handler responsible for sending back all metrics got from storage in string format.
+// SendAllMetrics is the handler responsible for sending back all metrics got from storage in html string format.
 func (s *HTTPServer) SendAllMetrics(c echo.Context) error {
 	metrics := s.Storage.GetAll()
 
-	responseString := pcstats.MetricSliceToString(metrics)
+	responseString := pcstats.MetricSliceToHTMLString(metrics)
 
-	return c.String(http.StatusOK, responseString)
+	compressedData := Compressor(c, []byte(responseString)) // optional compressing
+
+	return c.HTMLBlob(http.StatusOK, compressedData)
 }
 
 // ReceiveMetricJSON is the handler responsible for receiving metrics in JSON format.
